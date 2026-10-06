@@ -1,0 +1,5 @@
+numpy==2.4.6
+cantera==3.2.0
+CoolProp==8.0.0
+jupyter==1.1.1
+ipykernel==7.4.0
