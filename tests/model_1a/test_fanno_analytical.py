@@ -10,6 +10,7 @@ from concentric_tube_cht.model_1a.fanno_analytical import (
     fanno_stagnation_pressure_ratio,
     fanno_temperature_ratio,
     fanno_velocity_ratio,
+    solve_critical_inlet_mach,
     solve_subsonic_exit_mach,
     subsonic_fanno_station_ratios,
 )
@@ -306,3 +307,42 @@ def test_identical_mach_numbers_produce_unit_ratios():
     assert ratios.density == pytest.approx(1.0)
     assert ratios.velocity == pytest.approx(1.0)
     assert ratios.stagnation_pressure == pytest.approx(1.0)
+
+def test_critical_inlet_mach_places_sonic_state_at_exit():
+    gamma = 1.2105
+    friction_factor = 0.01430
+    length = 0.020
+    diameter = 0.010
+
+    M_in_critical = solve_critical_inlet_mach(
+        gamma=gamma,
+        darcy_friction_factor=friction_factor,
+        length=length,
+        diameter=diameter,
+    )
+
+    friction_length = friction_factor * length / diameter
+
+    assert M_in_critical == pytest.approx(
+        0.876996273582931,
+        rel=1.0e-10,
+    )
+
+    assert fanno_length_parameter(
+        M_in_critical,
+        gamma,
+    ) == pytest.approx(
+        friction_length,
+        abs=1.0e-12,
+    )
+
+
+def test_zero_friction_critical_inlet_is_sonic():
+    M_in_critical = solve_critical_inlet_mach(
+        gamma=1.4,
+        darcy_friction_factor=0.0,
+        length=0.020,
+        diameter=0.010,
+    )
+
+    assert M_in_critical == pytest.approx(1.0)

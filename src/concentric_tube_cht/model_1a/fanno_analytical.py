@@ -252,3 +252,50 @@ def subsonic_fanno_station_ratios(
         velocity=velocity_ratio,
         stagnation_pressure=stagnation_pressure_ratio,
     )
+
+def solve_critical_inlet_mach(
+    gamma: float,
+    darcy_friction_factor: float,
+    length: float,
+    diameter: float,
+) -> float:
+    """Return the inlet Mach number that produces M = 1 at the exit."""
+    values = (
+        gamma,
+        darcy_friction_factor,
+        length,
+        diameter,
+    )
+
+    if not all(math.isfinite(value) for value in values):
+        raise ValueError("All inputs must be finite.")
+
+    if gamma <= 1.0:
+        raise ValueError("Specific-heat ratio must be greater than one.")
+
+    if darcy_friction_factor < 0.0 or length < 0.0:
+        raise ValueError("Friction factor and length cannot be negative.")
+
+    if diameter <= 0.0:
+        raise ValueError("Diameter must be positive.")
+
+    friction_length = (
+        darcy_friction_factor * length / diameter
+    )
+
+    if friction_length == 0.0:
+        return 1.0
+
+    def residual(M_in: float) -> float:
+        return (
+            fanno_length_parameter(M_in, gamma)
+            - friction_length
+        )
+
+    return brentq(
+        residual,
+        1.0e-8,
+        1.0 - 1.0e-10,
+        xtol=1.0e-12,
+        rtol=1.0e-12,
+    )
